@@ -1,4 +1,3 @@
-\
 import os
 import sqlite3
 from datetime import datetime
@@ -146,6 +145,9 @@ def create_app() -> Flask:
     # ---------------- Admin ----------------
     @app.get("/admin/login")
     def admin_login():
+        admin_password = os.environ.get("ADMIN_PASSWORD")
+        if not admin_password:
+            flash("ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.", "danger")
         return render_template("admin_login.html", next=request.args.get("next", "/admin"))
 
     @app.post("/admin/login")
@@ -163,6 +165,7 @@ def create_app() -> Flask:
             session["admin"] = True
             flash("Admin login successful ✅", "success")
             return redirect(next_url)
+
         flash("Wrong username/password ❌", "danger")
         return redirect(url_for("admin_login"))
 
@@ -276,8 +279,8 @@ def create_app() -> Flask:
 
     return app
 
+
 app = create_app()
 
 if __name__ == "__main__":
-    # debug off by default for safer local use; change to True if you want
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
