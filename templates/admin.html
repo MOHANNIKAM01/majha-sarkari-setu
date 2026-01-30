@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %} • Admin{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>Admin Dashboard</h1>
+  <p class="muted">Add posts + manage content. (Safe login enabled)</p>
+</div>
+
+<div class="admingrid">
+  <section class="card">
+    <div class="section__head">
+      <h2>Add Post</h2>
+    </div>
+    <form method="post" action="{{ url_for('admin_add_post') }}" class="form">
+      <label>Title</label>
+      <input name="title" required placeholder="उदा. Police Bharti 2026 – Apply Online">
+
+      <label>Category</label>
+      <select name="category_slug" required>
+        {% for c in cats %}
+          <option value="{{ c['slug'] }}">{{ c['name'] }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Summary (short)</label>
+      <input name="summary" required placeholder="Short 1-line summary...">
+
+      <label>Content (full details)</label>
+      <textarea name="content" required rows="8" placeholder="Eligibility, Age, Dates, How to apply..."></textarea>
+
+      <label>Official URL (optional)</label>
+      <input name="source_url" placeholder="https://...">
+
+      <button class="btn" type="submit">Publish</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <div class="section__head">
+      <h2>Posts (Latest 50)</h2>
+    </div>
+    <div class="tablewrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Category</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th style="width:160px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in posts %}
+          <tr>
+            <td><a class="link" href="{{ url_for('post', post_id=p['id']) }}" target="_blank">{{ p['title'] }}</a></td>
+            <td><span class="pill pill--{{ p['category_slug'] }}">{{ p['category_slug'] }}</span></td>
+            <td class="muted">{{ p['created_at'] }}</td>
+            <td>
+              {% if p['is_published'] == 1 %}
+                <span class="status status--ok">Published</span>
+              {% else %}
+                <span class="status status--off">Draft</span>
+              {% endif %}
+            </td>
+            <td>
+              <a class="btn btn--sm btn--ghost" href="{{ url_for('admin_edit_post', post_id=p['id']) }}">Edit</a>
+              <form method="post" action="{{ url_for('admin_delete_post', post_id=p['id']) }}" style="display:inline;" onsubmit="return confirm('Delete this post?');">
+                <button class="btn btn--sm btn--danger" type="submit">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% else %}
+          <tr><td colspan="5" class="muted">No posts yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="hr">
+
+    <div class="section__head">
+      <h2>Add Category</h2>
+    </div>
+    <form method="post" action="{{ url_for('admin_add_category') }}" class="form form--inline">
+      <input name="name" placeholder="Name (e.g. Admit Card)" required>
+      <input name="slug" placeholder="slug (e.g. admit)" required>
+      <button class="btn btn--ghost" type="submit">Add</button>
+    </form>
+    <div class="muted" style="margin-top:8px;">Tip: slug should be small letters (no spaces).</div>
+  </section>
+</div>
+{% endblock %}

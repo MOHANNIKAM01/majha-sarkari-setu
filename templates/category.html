@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %} • {{ category['name'] }}{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>{{ category['name'] }}</h1>
+  <p class="muted">Latest updates under {{ category['name'] }}.</p>
+</div>
+
+<div class="card">
+  <div class="cards">
+    {% for p in posts %}
+      <article class="postcard">
+        <a href="{{ url_for('post', post_id=p['id']) }}" class="postcard__title">{{ p['title'] }}</a>
+        <div class="postcard__meta">{{ p['created_at'] }}</div>
+        <div class="postcard__summary">{{ p['summary'] }}</div>
+      </article>
+    {% else %}
+      <div class="muted">No posts found.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

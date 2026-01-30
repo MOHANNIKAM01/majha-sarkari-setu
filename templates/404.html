@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %} • 404{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>404 - Page Not Found</h1>
+  <p class="muted">हा page सापडला नाही. Home ला जा.</p>
+  <a class="btn" href="{{ url_for('home') }}">Go Home</a>
+</div>
+{% endblock %}

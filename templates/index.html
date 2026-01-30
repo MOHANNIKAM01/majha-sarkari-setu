@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Highlight bar -->
+<div class="noticebar">
+  <b>🔔 Important:</b> Daily Govt Jobs, Results & Schemes Updates – Majha Sarkari Setu
+</div>
+
+<!-- Top Boxes -->
+<div class="topboxes">
+  <a href="{{ url_for('category', slug='job') }}" class="topbox job">Jobs</a>
+  <a href="{{ url_for('category', slug='result') }}" class="topbox result">Results</a>
+  <a href="{{ url_for('category', slug='scheme') }}" class="topbox scheme">Schemes</a>
+  <a href="#" class="topbox admit">Admit Card</a>
+  <a href="#" class="topbox answer">Answer Key</a>
+  <a href="{{ url_for('search') }}" class="topbox search">Search</a>
+</div>
+
+<!-- Latest Updates Table -->
+<div class="card">
+  <h2 class="section-title">📌 Latest Updates</h2>
+  <table class="latest-table">
+    <tr>
+      <th>Post Name</th>
+      <th>Category</th>
+      <th>Date</th>
+    </tr>
+    {% for p in latest %}
+    <tr>
+      <td><a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a></td>
+      <td>{{ p['category_slug'] }}</td>
+      <td>{{ p['created_at'] }}</td>
+    </tr>
+    {% else %}
+    <tr>
+      <td colspan="3">No updates yet</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<!-- Sections -->
+<div class="portalgrid">
+
+  <div class="section card">
+    <h2>Latest Jobs</h2>
+    {% for p in jobs %}
+      <div class="postline">
+        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
+        <span>{{ p['created_at'] }}</span>
+      </div>
+    {% else %}
+      <p>No job posts</p>
+    {% endfor %}
+  </div>
+
+  <div class="section card">
+    <h2>Latest Results</h2>
+    {% for p in results %}
+      <div class="postline">
+        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
+        <span>{{ p['created_at'] }}</span>
+      </div>
+    {% else %}
+      <p>No result posts</p>
+    {% endfor %}
+  </div>
+
+  <div class="section card">
+    <h2>Govt Schemes</h2>
+    {% for p in schemes %}
+      <div class="postline">
+        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
+        <span>{{ p['created_at'] }}</span>
+      </div>
+    {% else %}
+      <p>No schemes</p>
+    {% endfor %}
+  </div>
+
+</div>
+
+{% endblock %}

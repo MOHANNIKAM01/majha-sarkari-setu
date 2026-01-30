@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %} • {{ post['title'] }}{% endblock %}
+{% block content %}
+<article class="article">
+  <div class="article__head">
+    <h1>{{ post['title'] }}</h1>
+    <div class="article__meta">
+      {% if category %}
+        <a class="pill pill--{{ category['slug'] }}" href="{{ url_for('category', slug=category['slug']) }}">{{ category['name'] }}</a>
+      {% endif %}
+      <span class="muted">{{ post['created_at'] }}</span>
+      {% if post['source_url'] %}
+        <a class="link" href="{{ post['source_url'] }}" target="_blank" rel="noopener">Official Link</a>
+      {% endif %}
+    </div>
+    <p class="lead">{{ post['summary'] }}</p>
+  </div>
+
+  <div class="article__body">
+    {{ post['content'] | replace('\n', '<br>') | safe }}
+  </div>
+</article>
+{% endblock %}

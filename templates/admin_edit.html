@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %} • Edit Post{% endblock %}
+{% block content %}
+<div class="pagehead">
+  <h1>Edit Post</h1>
+  <p class="muted">Update content / make draft / publish.</p>
+</div>
+
+<div class="card" style="max-width:900px;">
+  <form method="post" class="form">
+    <label>Title</label>
+    <input name="title" required value="{{ post['title'] }}">
+
+    <label>Category</label>
+    <select name="category_slug" required>
+      {% for c in cats %}
+        <option value="{{ c['slug'] }}" {% if c['slug']==post['category_slug'] %}selected{% endif %}>{{ c['name'] }}</option>
+      {% endfor %}
+    </select>
+
+    <label>Summary</label>
+    <input name="summary" required value="{{ post['summary'] }}">
+
+    <label>Content</label>
+    <textarea name="content" rows="10" required>{{ post['content'] }}</textarea>
+
+    <label>Official URL</label>
+    <input name="source_url" value="{{ post['source_url'] or '' }}">
+
+    <label>Status</label>
+    <select name="is_published">
+      <option value="1" {% if post['is_published']==1 %}selected{% endif %}>Published</option>
+      <option value="0" {% if post['is_published']==0 %}selected{% endif %}>Draft</option>
+    </select>
+
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button class="btn" type="submit">Save</button>
+      <a class="btn btn--ghost" href="{{ url_for('admin_dashboard') }}">Back</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
