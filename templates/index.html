@@ -27,7 +27,9 @@
     </tr>
     {% for p in latest %}
     <tr>
-      <td><a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a></td>
+      <td>
+        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
+      </td>
       <td>{{ p['category_slug'] }}</td>
       <td>{{ p['created_at'] }}</td>
     </tr>

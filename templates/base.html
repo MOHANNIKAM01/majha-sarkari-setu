@@ -20,6 +20,8 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
+
+  <!-- Header -->
   <header class="topbar">
     <div class="wrap topbar__inner">
       <div class="brand">
@@ -48,6 +50,7 @@
     </div>
   </header>
 
+  <!-- Navigation -->
   <nav class="navbar">
     <div class="nav-left">
       <a href="{{ url_for('home') }}" class="nav-link">Home</a>
@@ -72,6 +75,12 @@
     </div>
   </nav>
 
+  <!-- Ad Slot (Top Banner) -->
+  <div class="ad-banner">
+    <p style="text-align:center;color:#777;">[ Ad Space ]</p>
+  </div>
+
+  <!-- Main Content -->
   <main class="wrap main">
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
@@ -86,6 +95,12 @@
     {% block content %}{% endblock %}
   </main>
 
+  <!-- Ad Slot (Bottom Banner) -->
+  <div class="ad-banner">
+    <p style="text-align:center;color:#777;">[ Ad Space ]</p>
+  </div>
+
+  <!-- Footer -->
   <footer class="footer">
     <div class="wrap footer__inner">
       <div>
