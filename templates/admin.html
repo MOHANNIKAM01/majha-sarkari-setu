@@ -1,12 +1,15 @@
 {% extends "base.html" %}
 {% block title %} • Admin{% endblock %}
 {% block content %}
+
 <div class="pagehead">
   <h1>Admin Dashboard</h1>
   <p class="muted">Add posts + manage content. (Safe login enabled)</p>
 </div>
 
 <div class="admingrid">
+
+  <!-- ================= ADD POST ================= -->
   <section class="card">
     <div class="section__head">
       <h2>Add Post</h2>
@@ -35,10 +38,33 @@
     </form>
   </section>
 
+  <!-- ================= POSTS LIST ================= -->
   <section class="card">
     <div class="section__head">
-      <h2>Posts (Latest 50)</h2>
+      <h2>Posts</h2>
     </div>
+
+    <!-- 🔎 FILTER FORM -->
+    <form method="get" class="form form--inline" style="margin-bottom:12px;">
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for c in cats %}
+          <option value="{{ c['slug'] }}" {% if request.args.get('category') == c['slug'] %}selected{% endif %}>
+            {{ c['name'] }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <select name="status">
+        <option value="">All Status</option>
+        <option value="published" {% if request.args.get('status') == 'published' %}selected{% endif %}>Published</option>
+        <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+      </select>
+
+      <button class="btn btn--ghost" type="submit">Filter</button>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn--ghost">Reset</a>
+    </form>
+
     <div class="tablewrap">
       <table class="table">
         <thead>
@@ -53,8 +79,16 @@
         <tbody>
           {% for p in posts %}
           <tr>
-            <td><a class="link" href="{{ url_for('post', post_id=p['id']) }}" target="_blank">{{ p['title'] }}</a></td>
-            <td><span class="pill pill--{{ p['category_slug'] }}">{{ p['category_slug'] }}</span></td>
+            <td>
+              <a class="link" href="{{ url_for('post', post_id=p['id']) }}" target="_blank">
+                {{ p['title'] }}
+              </a>
+            </td>
+            <td>
+              <span class="pill pill--{{ p['category_slug'] }}">
+                {{ p['category_slug'] }}
+              </span>
+            </td>
             <td class="muted">{{ p['created_at'] }}</td>
             <td>
               {% if p['is_published'] == 1 %}
@@ -71,7 +105,9 @@
             </td>
           </tr>
           {% else %}
-          <tr><td colspan="5" class="muted">No posts yet.</td></tr>
+          <tr>
+            <td colspan="5" class="muted">No posts yet.</td>
+          </tr>
           {% endfor %}
         </tbody>
       </table>
@@ -79,6 +115,7 @@
 
     <hr class="hr">
 
+    <!-- ================= ADD CATEGORY ================= -->
     <div class="section__head">
       <h2>Add Category</h2>
     </div>
@@ -87,7 +124,11 @@
       <input name="slug" placeholder="slug (e.g. admit)" required>
       <button class="btn btn--ghost" type="submit">Add</button>
     </form>
-    <div class="muted" style="margin-top:8px;">Tip: slug should be small letters (no spaces).</div>
+    <div class="muted" style="margin-top:8px;">
+      Tip: slug should be small letters (no spaces).
+    </div>
   </section>
+
 </div>
+
 {% endblock %}

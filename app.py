@@ -23,6 +23,7 @@ def create_app() -> Flask:
         con = get_db()
         cur = con.cursor()
 
+        # Categories
         cur.execute("""
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -31,6 +32,7 @@ def create_app() -> Flask:
             )
         """)
 
+        # Posts
         cur.execute("""
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,12 +46,32 @@ def create_app() -> Flask:
             )
         """)
 
+        # Contact Messages
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                email TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+        """)
+
         # seed categories
         existing = {r["slug"] for r in cur.execute("SELECT slug FROM categories").fetchall()}
-        seeds = [("Jobs", "job"), ("Results", "result"), ("Schemes", "scheme")]
+        seeds = [
+            ("Jobs", "job"),
+            ("Results", "result"),
+            ("Schemes", "scheme"),
+            ("Exam Cutoffs", "examcutoff"),
+            ("Current Affairs", "currentaffairs"),
+        ]
         for name, slug in seeds:
             if slug not in existing:
-                cur.execute("INSERT OR IGNORE INTO categories (name, slug) VALUES (?,?)", (name, slug))
+                cur.execute(
+                    "INSERT OR IGNORE INTO categories (name, slug) VALUES (?,?)",
+                    (name, slug)
+                )
 
         con.commit()
         con.close()
@@ -71,6 +93,33 @@ def create_app() -> Flask:
             "year": datetime.now().year,
         }
 
+    # ---------------- Contact ----------------
+    @app.get("/contact")
+    def contact():
+        return render_template("contact.html")
+
+    @app.post("/contact")
+    def contact_post():
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip()
+        message = (request.form.get("message") or "").strip()
+
+        if not (name and email and message):
+            flash("All fields required.", "danger")
+            return redirect(url_for("contact"))
+
+        con = get_db()
+        con.execute(
+            "INSERT INTO contact_messages (name, email, message, created_at) VALUES (?,?,?,?)",
+            (name, email, message, datetime.now().strftime("%Y-%m-%d %H:%M"))
+        )
+        con.commit()
+        con.close()
+
+        flash("Message sent successfully ✅", "success")
+        return redirect(url_for("contact"))
+
+    # ---------------- Public ----------------
     @app.get("/")
     def home():
         con = get_db()
@@ -95,20 +144,32 @@ def create_app() -> Flask:
                ORDER BY id DESC LIMIT 10"""
         ).fetchall()
         con.close()
-        return render_template("index.html", cats=cats, jobs=jobs, results=results, schemes=schemes, latest=latest)
+        return render_template(
+            "index.html",
+            cats=cats,
+            jobs=jobs,
+            results=results,
+            schemes=schemes,
+            latest=latest,
+        )
 
     @app.get("/category/<slug>")
     def category(slug):
         con = get_db()
-        cat = con.execute("SELECT name, slug FROM categories WHERE slug=?", (slug,)).fetchone()
+        cat = con.execute(
+            "SELECT name, slug FROM categories WHERE slug=?",
+            (slug,),
+        ).fetchone()
         if not cat:
             con.close()
             abort(404)
+
         posts = con.execute(
             """SELECT id, title, summary, created_at
-               FROM posts WHERE category_slug=? AND is_published=1
+               FROM posts
+               WHERE category_slug=? AND is_published=1
                ORDER BY id DESC""",
-            (slug,)
+            (slug,),
         ).fetchall()
         con.close()
         return render_template("category.html", category=cat, posts=posts)
@@ -116,11 +177,17 @@ def create_app() -> Flask:
     @app.get("/post/<int:post_id>")
     def post(post_id: int):
         con = get_db()
-        p = con.execute("SELECT * FROM posts WHERE id=? AND is_published=1", (post_id,)).fetchone()
+        p = con.execute(
+            "SELECT * FROM posts WHERE id=? AND is_published=1",
+            (post_id,),
+        ).fetchone()
         if not p:
             con.close()
             abort(404)
-        cat = con.execute("SELECT name, slug FROM categories WHERE slug=?", (p["category_slug"],)).fetchone()
+        cat = con.execute(
+            "SELECT name, slug FROM categories WHERE slug=?",
+            (p["category_slug"],),
+        ).fetchone()
         con.close()
         return render_template("post.html", post=p, category=cat)
 
@@ -128,16 +195,19 @@ def create_app() -> Flask:
     def search():
         q = (request.args.get("q") or "").strip()
         con = get_db()
-        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
+        cats = con.execute(
+            "SELECT name, slug FROM categories ORDER BY id"
+        ).fetchall()
         posts = []
         if q:
             like = f"%{q}%"
             posts = con.execute(
                 """SELECT id, title, summary, created_at, category_slug
                    FROM posts
-                   WHERE is_published=1 AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)
+                   WHERE is_published=1
+                     AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)
                    ORDER BY id DESC""",
-                (like, like, like)
+                (like, like, like),
             ).fetchall()
         con.close()
         return render_template("search.html", q=q, posts=posts, cats=cats)
@@ -147,8 +217,14 @@ def create_app() -> Flask:
     def admin_login():
         admin_password = os.environ.get("ADMIN_PASSWORD")
         if not admin_password:
-            flash("ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.", "danger")
-        return render_template("admin_login.html", next=request.args.get("next", "/admin"))
+            flash(
+                "ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.",
+                "danger",
+            )
+        return render_template(
+            "admin_login.html",
+            next=request.args.get("next", "/admin"),
+        )
 
     @app.post("/admin/login")
     def admin_login_post():
@@ -158,7 +234,10 @@ def create_app() -> Flask:
 
         admin_password = os.environ.get("ADMIN_PASSWORD")
         if not admin_password:
-            flash("ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.", "danger")
+            flash(
+                "ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.",
+                "danger",
+            )
             return redirect(url_for("admin_login"))
 
         if username == "admin" and password == admin_password:
@@ -175,17 +254,46 @@ def create_app() -> Flask:
         flash("Logged out.", "info")
         return redirect(url_for("home"))
 
+    # ✅ UPDATED ADMIN DASHBOARD WITH FILTERS
     @app.get("/admin")
     @admin_required
     def admin_dashboard():
+        category_filter = request.args.get("category")
+        status_filter = request.args.get("status")
+
         con = get_db()
-        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
-        posts = con.execute(
-            """SELECT id, title, category_slug, created_at, is_published
-               FROM posts ORDER BY id DESC LIMIT 50"""
+        cats = con.execute(
+            "SELECT name, slug FROM categories ORDER BY id"
+        ).fetchall()
+
+        query = "SELECT id, title, category_slug, created_at, is_published FROM posts WHERE 1=1"
+        params = []
+
+        if category_filter:
+            query += " AND category_slug=?"
+            params.append(category_filter)
+
+        if status_filter == "published":
+            query += " AND is_published=1"
+        elif status_filter == "draft":
+            query += " AND is_published=0"
+
+        query += " ORDER BY id DESC"
+
+        posts = con.execute(query, params).fetchall()
+        con.close()
+
+        return render_template("admin.html", cats=cats, posts=posts)
+
+    @app.get("/admin/messages")
+    @admin_required
+    def admin_messages():
+        con = get_db()
+        msgs = con.execute(
+            "SELECT * FROM contact_messages ORDER BY id DESC"
         ).fetchall()
         con.close()
-        return render_template("admin.html", cats=cats, posts=posts)
+        return render_template("admin_messages.html", messages=msgs)
 
     @app.post("/admin/category/add")
     @admin_required
@@ -197,7 +305,10 @@ def create_app() -> Flask:
             return redirect(url_for("admin_dashboard"))
         con = get_db()
         try:
-            con.execute("INSERT INTO categories (name, slug) VALUES (?,?)", (name, slug))
+            con.execute(
+                "INSERT INTO categories (name, slug) VALUES (?,?)",
+                (name, slug),
+            )
             con.commit()
             flash("Category added ✅", "success")
         except sqlite3.IntegrityError:
@@ -221,9 +332,17 @@ def create_app() -> Flask:
 
         con = get_db()
         con.execute(
-            """INSERT INTO posts (title, category_slug, summary, content, source_url, created_at, is_published)
+            """INSERT INTO posts
+               (title, category_slug, summary, content, source_url, created_at, is_published)
                VALUES (?,?,?,?,?,?,1)""",
-            (title, category_slug, summary, content, source_url, datetime.now().strftime("%Y-%m-%d %H:%M"))
+            (
+                title,
+                category_slug,
+                summary,
+                content,
+                source_url,
+                datetime.now().strftime("%Y-%m-%d %H:%M"),
+            ),
         )
         con.commit()
         con.close()
@@ -234,8 +353,13 @@ def create_app() -> Flask:
     @admin_required
     def admin_edit_post(post_id: int):
         con = get_db()
-        p = con.execute("SELECT * FROM posts WHERE id=?", (post_id,)).fetchone()
-        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
+        p = con.execute(
+            "SELECT * FROM posts WHERE id=?",
+            (post_id,),
+        ).fetchone()
+        cats = con.execute(
+            "SELECT name, slug FROM categories ORDER BY id"
+        ).fetchall()
         con.close()
         if not p:
             abort(404)
@@ -254,9 +378,18 @@ def create_app() -> Flask:
         con = get_db()
         con.execute(
             """UPDATE posts
-               SET title=?, category_slug=?, summary=?, content=?, source_url=?, is_published=?
+               SET title=?, category_slug=?, summary=?, content=?,
+                   source_url=?, is_published=?
                WHERE id=?""",
-            (title, category_slug, summary, content, source_url, is_published, post_id)
+            (
+                title,
+                category_slug,
+                summary,
+                content,
+                source_url,
+                is_published,
+                post_id,
+            ),
         )
         con.commit()
         con.close()
@@ -267,7 +400,10 @@ def create_app() -> Flask:
     @admin_required
     def admin_delete_post(post_id: int):
         con = get_db()
-        con.execute("DELETE FROM posts WHERE id=?", (post_id,))
+        con.execute(
+            "DELETE FROM posts WHERE id=?",
+            (post_id,),
+        )
         con.commit()
         con.close()
         flash("Post deleted 🗑️", "info")
@@ -283,4 +419,8 @@ def create_app() -> Flask:
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 5000)),
+        debug=True,
+    )
