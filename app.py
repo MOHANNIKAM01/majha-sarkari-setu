@@ -77,7 +77,7 @@ def create_app() -> Flask:
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not session.get("admin"):
-                return redirect(url_for("admin_login", next=request.path))
+                return redirect(url_for("admin_login"))
             return fn(*args, **kwargs)
         return wrapper
 
@@ -198,13 +198,42 @@ def create_app() -> Flask:
         flash("Message sent successfully ✅", "success")
         return redirect(url_for("contact"))
 
+    # ---------------- ADMIN ----------------
+    @app.get("/admin/login")
+    def admin_login():
+        return render_template("admin_login.html")
+
+    @app.post("/admin/login")
+    def admin_login_post():
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username == "admin" and password == "admin123":
+            session["admin"] = True
+            flash("Admin login successful ✅", "success")
+            return redirect(url_for("admin_dashboard"))
+        else:
+            flash("Wrong username or password ❌", "danger")
+            return redirect(url_for("admin_login"))
+
+    @app.get("/admin/logout")
+    def admin_logout():
+        session.pop("admin", None)
+        flash("Logged out", "info")
+        return redirect(url_for("home"))
+
+    @app.get("/admin")
+    @admin_required
+    def admin_dashboard():
+        return "Admin Dashboard Working ✅"
+
     # ---------------- SITEMAP ----------------
     @app.get("/sitemap.xml")
     def sitemap():
         con = get_db()
-        base_url = request.url_root.rstrip("/")
-
         urls = []
+        base_url = "https://majha-sarkari-setu.onrender.com"
+
         urls.append(f"{base_url}/")
 
         categories = con.execute("SELECT slug FROM categories").fetchall()
@@ -230,16 +259,10 @@ def create_app() -> Flask:
     # ---------------- ROBOTS ----------------
     @app.get("/robots.txt")
     def robots():
-        base_url = request.url_root.rstrip("/")
-        txt = f"""User-agent: *
-Allow: /
-
-Disallow: /admin
-Disallow: /admin/
-
-Sitemap: {base_url}/sitemap.xml
-"""
-        return Response(txt, mimetype="text/plain")
+        return Response(
+            "User-agent: *\nAllow: /\nSitemap: https://majha-sarkari-setu.onrender.com/sitemap.xml",
+            mimetype="text/plain"
+        )
 
     # ---------------- ERRORS ----------------
     @app.errorhandler(404)
