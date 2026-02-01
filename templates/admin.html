@@ -4,12 +4,43 @@
 
 <div class="pagehead">
   <h1>Admin Dashboard</h1>
-  <p class="muted">Add posts + manage content. (Safe login enabled)</p>
+  <p class="muted">Add posts + manage content + filters.</p>
+</div>
+
+<!-- Filters Row -->
+<div class="card" style="margin-bottom:16px;">
+  <form method="get" action="{{ url_for('admin_dashboard') }}" class="form form--inline" style="gap:10px;align-items:end;">
+    <div>
+      <label class="muted" style="display:block;margin-bottom:6px;">Category</label>
+      <select name="category">
+        <option value="">All</option>
+        {% for c in cats %}
+          <option value="{{ c['slug'] }}"
+            {% if request.args.get('category') == c['slug'] %}selected{% endif %}>
+            {{ c['name'] }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="muted" style="display:block;margin-bottom:6px;">Status</label>
+      <select name="status">
+        <option value="">All</option>
+        <option value="published" {% if request.args.get('status') == 'published' %}selected{% endif %}>Published</option>
+        <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
+      </select>
+    </div>
+
+    <button class="btn btn--ghost" type="submit">Apply Filters</button>
+    <a class="btn btn--ghost" href="{{ url_for('admin_dashboard') }}">Reset</a>
+
+    <a class="btn" href="{{ url_for('admin_messages') }}" style="margin-left:auto;">📩 Messages</a>
+  </form>
 </div>
 
 <div class="admingrid">
-
-  <!-- ================= ADD POST ================= -->
+  <!-- Add Post -->
   <section class="card">
     <div class="section__head">
       <h2>Add Post</h2>
@@ -38,32 +69,12 @@
     </form>
   </section>
 
-  <!-- ================= POSTS LIST ================= -->
+  <!-- Posts List -->
   <section class="card">
     <div class="section__head">
       <h2>Posts</h2>
+      <p class="muted" style="margin:0;">Showing filtered results (latest first).</p>
     </div>
-
-    <!-- 🔎 FILTER FORM -->
-    <form method="get" class="form form--inline" style="margin-bottom:12px;">
-      <select name="category">
-        <option value="">All Categories</option>
-        {% for c in cats %}
-          <option value="{{ c['slug'] }}" {% if request.args.get('category') == c['slug'] %}selected{% endif %}>
-            {{ c['name'] }}
-          </option>
-        {% endfor %}
-      </select>
-
-      <select name="status">
-        <option value="">All Status</option>
-        <option value="published" {% if request.args.get('status') == 'published' %}selected{% endif %}>Published</option>
-        <option value="draft" {% if request.args.get('status') == 'draft' %}selected{% endif %}>Draft</option>
-      </select>
-
-      <button class="btn btn--ghost" type="submit">Filter</button>
-      <a href="{{ url_for('admin_dashboard') }}" class="btn btn--ghost">Reset</a>
-    </form>
 
     <div class="tablewrap">
       <table class="table">
@@ -80,15 +91,9 @@
           {% for p in posts %}
           <tr>
             <td>
-              <a class="link" href="{{ url_for('post', post_id=p['id']) }}" target="_blank">
-                {{ p['title'] }}
-              </a>
+              <a class="link" href="{{ url_for('post', post_id=p['id']) }}" target="_blank">{{ p['title'] }}</a>
             </td>
-            <td>
-              <span class="pill pill--{{ p['category_slug'] }}">
-                {{ p['category_slug'] }}
-              </span>
-            </td>
+            <td><span class="pill pill--{{ p['category_slug'] }}">{{ p['category_slug'] }}</span></td>
             <td class="muted">{{ p['created_at'] }}</td>
             <td>
               {% if p['is_published'] == 1 %}
@@ -105,9 +110,7 @@
             </td>
           </tr>
           {% else %}
-          <tr>
-            <td colspan="5" class="muted">No posts yet.</td>
-          </tr>
+          <tr><td colspan="5" class="muted">No posts found.</td></tr>
           {% endfor %}
         </tbody>
       </table>
@@ -115,7 +118,7 @@
 
     <hr class="hr">
 
-    <!-- ================= ADD CATEGORY ================= -->
+    <!-- Add Category -->
     <div class="section__head">
       <h2>Add Category</h2>
     </div>
@@ -124,11 +127,8 @@
       <input name="slug" placeholder="slug (e.g. admit)" required>
       <button class="btn btn--ghost" type="submit">Add</button>
     </form>
-    <div class="muted" style="margin-top:8px;">
-      Tip: slug should be small letters (no spaces).
-    </div>
+    <div class="muted" style="margin-top:8px;">Tip: slug should be small letters (no spaces).</div>
   </section>
-
 </div>
 
 {% endblock %}

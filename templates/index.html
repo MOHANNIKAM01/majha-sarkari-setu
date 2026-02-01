@@ -1,85 +1,109 @@
 {% extends "base.html" %}
+{% block title %} • Home{% endblock %}
 {% block content %}
 
-<!-- Highlight bar -->
+<!-- Highlight Bar -->
 <div class="noticebar">
-  <b>🔔 Important:</b> Daily Govt Jobs, Results & Schemes Updates – Majha Sarkari Setu
+  <b>🔔 Important:</b>
+  Daily Govt Jobs, Results, Schemes, Exam Cutoffs & Current Affairs – Majha Sarkari Setu
 </div>
 
-<!-- Top Boxes -->
+<!-- Quick Navigation Boxes -->
 <div class="topboxes">
   <a href="{{ url_for('category', slug='job') }}" class="topbox job">Jobs</a>
   <a href="{{ url_for('category', slug='result') }}" class="topbox result">Results</a>
   <a href="{{ url_for('category', slug='scheme') }}" class="topbox scheme">Schemes</a>
-  <a href="#" class="topbox admit">Admit Card</a>
-  <a href="#" class="topbox answer">Answer Key</a>
+  <a href="{{ url_for('category', slug='examcutoff') }}" class="topbox admit">Exam Cutoffs</a>
+  <a href="{{ url_for('category', slug='currentaffairs') }}" class="topbox answer">Current Affairs</a>
   <a href="{{ url_for('search') }}" class="topbox search">Search</a>
 </div>
 
-<!-- Latest Updates Table -->
+<!-- Top Ad -->
+<div class="ad-banner">
+  <p style="text-align:center;color:#777;">[ Advertisement ]</p>
+</div>
+
+<!-- Latest Updates -->
 <div class="card">
   <h2 class="section-title">📌 Latest Updates</h2>
   <table class="latest-table">
-    <tr>
-      <th>Post Name</th>
-      <th>Category</th>
-      <th>Date</th>
-    </tr>
-    {% for p in latest %}
-    <tr>
-      <td>
-        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
-      </td>
-      <td>{{ p['category_slug'] }}</td>
-      <td>{{ p['created_at'] }}</td>
-    </tr>
-    {% else %}
-    <tr>
-      <td colspan="3">No updates yet</td>
-    </tr>
-    {% endfor %}
+    <thead>
+      <tr>
+        <th>Post Name</th>
+        <th>Category</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in latest %}
+      <tr>
+        <td>
+          <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
+        </td>
+        <td>{{ p['category_slug'] }}</td>
+        <td>{{ p['created_at'] }}</td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="3" class="muted">No updates yet</td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
 </div>
 
-<!-- Sections -->
+<!-- Middle Ad -->
+<div class="ad-banner">
+  <p style="text-align:center;color:#777;">[ Advertisement ]</p>
+</div>
+
+<!-- Main Sections -->
 <div class="portalgrid">
 
+  <!-- Jobs -->
   <div class="section card">
-    <h2>Latest Jobs</h2>
+    <h2>🧾 Latest Jobs</h2>
     {% for p in jobs %}
       <div class="postline">
         <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
         <span>{{ p['created_at'] }}</span>
       </div>
     {% else %}
-      <p>No job posts</p>
+      <p class="muted">No job posts</p>
     {% endfor %}
   </div>
 
+  <!-- Results -->
   <div class="section card">
-    <h2>Latest Results</h2>
+    <h2>📢 Latest Results</h2>
     {% for p in results %}
       <div class="postline">
         <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
         <span>{{ p['created_at'] }}</span>
       </div>
     {% else %}
-      <p>No result posts</p>
+      <p class="muted">No result posts</p>
     {% endfor %}
   </div>
 
+  <!-- Schemes -->
   <div class="section card">
-    <h2>Govt Schemes</h2>
+    <h2>🏛️ Govt Schemes</h2>
     {% for p in schemes %}
       <div class="postline">
         <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
         <span>{{ p['created_at'] }}</span>
       </div>
     {% else %}
-      <p>No schemes</p>
+      <p class="muted">No schemes</p>
     {% endfor %}
   </div>
 
+</div>
+
+<!-- Bottom Ad -->
+<div class="ad-banner">
+  <p style="text-align:center;color:#777;">[ Advertisement ]</p>
 </div>
 
 {% endblock %}

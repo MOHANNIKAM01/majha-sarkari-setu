@@ -1,23 +1,71 @@
 {% extends "base.html" %}
 {% block title %} • {{ post['title'] }}{% endblock %}
+
 {% block content %}
 <article class="article">
+
+  <!-- Post Header -->
   <div class="article__head">
     <h1>{{ post['title'] }}</h1>
+
     <div class="article__meta">
       {% if category %}
-        <a class="pill pill--{{ category['slug'] }}" href="{{ url_for('category', slug=category['slug']) }}">{{ category['name'] }}</a>
+        <a class="pill pill--{{ category['slug'] }}"
+           href="{{ url_for('category', slug=category['slug']) }}">
+          {{ category['name'] }}
+        </a>
       {% endif %}
-      <span class="muted">{{ post['created_at'] }}</span>
+
+      <span class="muted">🗓 {{ post['created_at'] }}</span>
+
       {% if post['source_url'] %}
-        <a class="link" href="{{ post['source_url'] }}" target="_blank" rel="noopener">Official Link</a>
+        <a class="link"
+           href="{{ post['source_url'] }}"
+           target="_blank"
+           rel="noopener noreferrer">
+          Official Website
+        </a>
       {% endif %}
     </div>
+
     <p class="lead">{{ post['summary'] }}</p>
   </div>
 
+  <!-- Ad Slot (Top of content) -->
+  <div class="ad-banner">
+    <p style="text-align:center;color:#777;">[ Ad Space ]</p>
+  </div>
+
+  <!-- Post Body -->
   <div class="article__body">
     {{ post['content'] | replace('\n', '<br>') | safe }}
   </div>
+
+  <!-- Ad Slot (Bottom of content) -->
+  <div class="ad-banner">
+    <p style="text-align:center;color:#777;">[ Ad Space ]</p>
+  </div>
+
+  <!-- Share Section -->
+  <div class="sharebox">
+    <h3>📢 Share this post</h3>
+    <div class="social-share">
+      <a target="_blank"
+         href="https://t.me/share/url?url={{ request.url }}&text={{ post['title'] }}">
+         Telegram
+      </a>
+      |
+      <a target="_blank"
+         href="https://wa.me/?text={{ post['title'] }} - {{ request.url }}">
+         WhatsApp
+      </a>
+      |
+      <a target="_blank"
+         href="https://www.facebook.com/sharer/sharer.php?u={{ request.url }}">
+         Facebook
+      </a>
+    </div>
+  </div>
+
 </article>
 {% endblock %}

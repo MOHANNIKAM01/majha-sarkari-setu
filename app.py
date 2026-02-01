@@ -2,10 +2,9 @@ import os
 import sqlite3
 from datetime import datetime
 from functools import wraps
-
 from flask import (
     Flask, render_template, request, redirect, url_for,
-    flash, session, abort
+    flash, session, abort, Response
 )
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
@@ -23,7 +22,6 @@ def create_app() -> Flask:
         con = get_db()
         cur = con.cursor()
 
-        # Categories
         cur.execute("""
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +30,6 @@ def create_app() -> Flask:
             )
         """)
 
-        # Posts
         cur.execute("""
             CREATE TABLE IF NOT EXISTS posts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -46,7 +43,6 @@ def create_app() -> Flask:
             )
         """)
 
-        # Contact Messages
         cur.execute("""
             CREATE TABLE IF NOT EXISTS contact_messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -57,7 +53,6 @@ def create_app() -> Flask:
             )
         """)
 
-        # Seed categories
         existing = {r["slug"] for r in cur.execute("SELECT slug FROM categories").fetchall()}
         seeds = [
             ("Jobs", "job"),
@@ -93,33 +88,7 @@ def create_app() -> Flask:
             "year": datetime.now().year,
         }
 
-    # ---------------- Contact ----------------
-    @app.get("/contact")
-    def contact():
-        return render_template("contact.html")
-
-    @app.post("/contact")
-    def contact_post():
-        name = (request.form.get("name") or "").strip()
-        email = (request.form.get("email") or "").strip()
-        message = (request.form.get("message") or "").strip()
-
-        if not (name and email and message):
-            flash("All fields required.", "danger")
-            return redirect(url_for("contact"))
-
-        con = get_db()
-        con.execute(
-            "INSERT INTO contact_messages (name, email, message, created_at) VALUES (?,?,?,?)",
-            (name, email, message, datetime.now().strftime("%Y-%m-%d %H:%M"))
-        )
-        con.commit()
-        con.close()
-
-        flash("Message sent successfully ✅", "success")
-        return redirect(url_for("contact"))
-
-    # ---------------- Public ----------------
+    # ---------------- PUBLIC ----------------
     @app.get("/")
     def home():
         con = get_db()
@@ -136,14 +105,15 @@ def create_app() -> Flask:
         jobs = latest_for("job", 8)
         results = latest_for("result", 6)
         schemes = latest_for("scheme", 6)
+
         latest = con.execute(
             """SELECT id, title, category_slug, summary, created_at
                FROM posts
                WHERE is_published=1
                ORDER BY id DESC LIMIT 10"""
         ).fetchall()
-
         con.close()
+
         return render_template(
             "index.html",
             jobs=jobs,
@@ -155,12 +125,8 @@ def create_app() -> Flask:
     @app.get("/category/<slug>")
     def category(slug):
         con = get_db()
-        cat = con.execute(
-            "SELECT name, slug FROM categories WHERE slug=?",
-            (slug,),
-        ).fetchone()
+        cat = con.execute("SELECT name, slug FROM categories WHERE slug=?", (slug,)).fetchone()
         if not cat:
-            con.close()
             abort(404)
 
         posts = con.execute(
@@ -168,25 +134,22 @@ def create_app() -> Flask:
                FROM posts
                WHERE category_slug=? AND is_published=1
                ORDER BY id DESC""",
-            (slug,),
+            (slug,)
         ).fetchall()
         con.close()
         return render_template("category.html", category=cat, posts=posts)
 
     @app.get("/post/<int:post_id>")
-    def post(post_id: int):
+    def post(post_id):
         con = get_db()
         p = con.execute(
-            "SELECT * FROM posts WHERE id=? AND is_published=1",
-            (post_id,),
+            "SELECT * FROM posts WHERE id=? AND is_published=1", (post_id,)
         ).fetchone()
         if not p:
-            con.close()
             abort(404)
 
         cat = con.execute(
-            "SELECT name, slug FROM categories WHERE slug=?",
-            (p["category_slug"],),
+            "SELECT name, slug FROM categories WHERE slug=?", (p["category_slug"],)
         ).fetchone()
         con.close()
         return render_template("post.html", post=p, category=cat)
@@ -202,73 +165,86 @@ def create_app() -> Flask:
                 """SELECT id, title, summary, created_at, category_slug
                    FROM posts
                    WHERE is_published=1
-                     AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)
+                   AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)
                    ORDER BY id DESC""",
                 (like, like, like),
             ).fetchall()
         con.close()
         return render_template("search.html", q=q, posts=posts)
 
-    # ---------------- Admin ----------------
-    @app.get("/admin/login")
-    def admin_login():
-        return render_template("admin_login.html", next=request.args.get("next", "/admin"))
+    # ---------------- CONTACT ----------------
+    @app.get("/contact")
+    def contact():
+        return render_template("contact.html")
 
-    @app.post("/admin/login")
-    def admin_login_post():
-        username = (request.form.get("username") or "").strip()
-        password = (request.form.get("password") or "").strip()
-        next_url = request.form.get("next") or "/admin"
+    @app.post("/contact")
+    def contact_post():
+        name = request.form.get("name","").strip()
+        email = request.form.get("email","").strip()
+        message = request.form.get("message","").strip()
 
-        admin_password = os.environ.get("ADMIN_PASSWORD")
-        if username == "admin" and password == admin_password:
-            session["admin"] = True
-            flash("Admin login successful ✅", "success")
-            return redirect(next_url)
-
-        flash("Wrong username/password ❌", "danger")
-        return redirect(url_for("admin_login"))
-
-    @app.get("/admin/logout")
-    def admin_logout():
-        session.clear()
-        flash("Logged out.", "info")
-        return redirect(url_for("home"))
-
-    @app.get("/admin")
-    @admin_required
-    def admin_dashboard():
-        category_filter = request.args.get("category")
-        status_filter = request.args.get("status")
+        if not (name and email and message):
+            flash("All fields required.", "danger")
+            return redirect(url_for("contact"))
 
         con = get_db()
-        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
-
-        query = "SELECT id, title, category_slug, created_at, is_published FROM posts WHERE 1=1"
-        params = []
-
-        if category_filter:
-            query += " AND category_slug=?"
-            params.append(category_filter)
-
-        if status_filter == "published":
-            query += " AND is_published=1"
-        elif status_filter == "draft":
-            query += " AND is_published=0"
-
-        query += " ORDER BY id DESC"
-
-        posts = con.execute(query, params).fetchall()
+        con.execute(
+            "INSERT INTO contact_messages (name,email,message,created_at) VALUES (?,?,?,?)",
+            (name, email, message, datetime.now().strftime("%Y-%m-%d %H:%M"))
+        )
+        con.commit()
         con.close()
-        return render_template("admin.html", cats=cats, posts=posts)
 
-    @app.get("/admin/messages")
-    @admin_required
-    def admin_messages():
+        flash("Message sent successfully ✅", "success")
+        return redirect(url_for("contact"))
+
+    # ---------------- SITEMAP ----------------
+    @app.get("/sitemap.xml")
+    def sitemap():
         con = get_db()
-        msgs = con.execute("SELECT * FROM contact_messages ORDER BY id DESC").fetchall()
+        base_url = request.url_root.rstrip("/")
+
+        urls = []
+        urls.append(f"{base_url}/")
+
+        categories = con.execute("SELECT slug FROM categories").fetchall()
+        for c in categories:
+            urls.append(f"{base_url}/category/{c['slug']}")
+
+        posts = con.execute("SELECT id FROM posts WHERE is_published=1").fetchall()
+        for p in posts:
+            urls.append(f"{base_url}/post/{p['id']}")
+
         con.close()
-        return render_template("admin_messages.html", messages=msgs)
+
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+        xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+        for url in urls:
+            xml.append("  <url>")
+            xml.append(f"    <loc>{url}</loc>")
+            xml.append("  </url>")
+        xml.append("</urlset>")
+
+        return Response("\n".join(xml), mimetype="application/xml")
+
+    # ---------------- ROBOTS ----------------
+    @app.get("/robots.txt")
+    def robots():
+        base_url = request.url_root.rstrip("/")
+        txt = f"""User-agent: *
+Allow: /
+
+Disallow: /admin
+Disallow: /admin/
+
+Sitemap: {base_url}/sitemap.xml
+"""
+        return Response(txt, mimetype="text/plain")
+
+    # ---------------- ERRORS ----------------
+    @app.errorhandler(404)
+    def not_found(_):
+        return render_template("404.html"), 404
 
     return app
 
