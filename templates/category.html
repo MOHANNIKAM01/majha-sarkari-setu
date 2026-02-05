@@ -8,55 +8,41 @@
 </div>
 
 {% if category['slug'] == 'examcutoff' %}
-  <!-- Exam Cutoff Table -->
-  <table class="cutoff-table">
-    <tr>
-      <th>Exam</th>
-      <th>Details</th>
-      <th>Date</th>
-    </tr>
-    {% for p in posts %}
-    <tr>
-      <td>
-        <a href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a>
-      </td>
-      <td>{{ p['summary'] }}</td>
-      <td>{{ p['created_at'] }}</td>
-    </tr>
-    {% else %}
-    <tr>
-      <td colspan="3">No cutoff updates yet.</td>
-    </tr>
-    {% endfor %}
-  </table>
-
-{% elif category['slug'] == 'currentaffairs' %}
-  <!-- Current Affairs -->
   <div class="card">
-    <div class="cards">
-      {% for p in posts %}
-        <article class="postcard">
-          <a href="{{ url_for('post', post_id=p['id']) }}" class="postcard__title">
-            {{ p['title'] }}
-          </a>
-          <div class="postcard__meta">🗓 {{ p['created_at'] }}</div>
-          <div class="postcard__summary">{{ p['summary'] }}</div>
-        </article>
-      {% else %}
-        <div class="muted">No current affairs yet.</div>
-      {% endfor %}
+    <div class="section__head">
+      <h2>Exam Cutoffs</h2>
+    </div>
+
+    <div class="tablewrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Exam</th>
+            <th>Details</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in posts %}
+          <tr>
+            <td><a class="link" href="{{ url_for('post', post_id=p['id']) }}">{{ p['title'] }}</a></td>
+            <td class="muted">{{ p['summary'] }}</td>
+            <td class="muted">{{ p['created_at'] }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3" class="muted">No cutoff updates yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </div>
   </div>
 
 {% else %}
-  <!-- Normal categories -->
   <div class="card">
     <div class="cards">
       {% for p in posts %}
         <article class="postcard">
-          <a href="{{ url_for('post', post_id=p['id']) }}" class="postcard__title">
-            {{ p['title'] }}
-          </a>
+          <a href="{{ url_for('post', post_id=p['id']) }}" class="postcard__title">{{ p['title'] }}</a>
           <div class="postcard__meta">{{ p['created_at'] }}</div>
           <div class="postcard__summary">{{ p['summary'] }}</div>
         </article>

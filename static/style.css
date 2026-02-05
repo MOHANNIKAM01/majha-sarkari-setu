@@ -497,4 +497,50 @@ a{color:inherit}
   color:white;
   transform:scale(1.1);
 }
+/* ================= NAVBAR FIX ================= */
+.navbar{
+  background:#fff;
+  border-bottom:1px solid var(--border);
+  position:sticky;
+  top:0;
+  z-index:20;
+}
+
+.nav-inner{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  padding:10px 0;
+  flex-wrap:wrap;
+}
+
+.nav-link{
+  text-decoration:none;
+  padding:8px 14px;
+  border-radius:999px;
+  color:#1f2a44;
+  font-weight:700;
+  transition:0.2s;
+}
+
+.nav-link:hover{
+  background:rgba(11,60,93,.08);
+  color:var(--primary);
+}
+
+/* ================= ADS SMART HIDE ================= */
+.ad-banner{
+  display:none; /* default hidden */
+  margin:14px 0;
+  padding:10px;
+  background:#fff;
+  border:1px dashed var(--border);
+  border-radius:14px;
+  text-align:center;
+}
+
+/* show only when ads loaded */
+.ad-banner.show{
+  display:block;
+}
 

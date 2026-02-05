@@ -9,41 +9,36 @@
   <meta name="description" content="Majha Sarkari Setu – Latest Govt Jobs, Results, Schemes, Exam Cutoffs & Current Affairs" />
   <meta name="keywords" content="government jobs, sarkari naukri, exam results, schemes, current affairs, exam cutoffs" />
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- Main CSS -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-  <!-- Google AdSense (replace ca-pub-XXXXXXXXXXXX with your ID) -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXX"
+  {% if adsense_enabled %}
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client }}"
      crossorigin="anonymous"></script>
+  {% endif %}
 </head>
 <body>
 
-<!-- ================= HEADER ================= -->
 <header class="topbar">
   <div class="wrap topbar__inner">
-
     <div class="brand">
       <a class="brand__logo" href="{{ url_for('home') }}">
         <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ site_name }} logo">
       </a>
       <div class="brand__text">
         <a class="brand__name" href="{{ url_for('home') }}">{{ site_name }}</a>
-        <div class="brand__tag">Jobs • Results • Schemes • Updates</div>
+        <div class="brand__tag">Jobs • Results • Schemes • Updates (Marathi + English mix)</div>
       </div>
     </div>
 
     <div class="topbar__actions">
       <form class="search" action="{{ url_for('search') }}" method="get">
         <input name="q" placeholder="Search jobs/schemes..." value="{{ request.args.get('q','') }}">
-        <button type="submit">Search</button>
+        <button type="submit" aria-label="Search">Search</button>
       </form>
 
       {% if session.get('admin') %}
@@ -53,39 +48,35 @@
         <a class="btn btn--ghost" href="{{ url_for('admin_login') }}">Admin Login</a>
       {% endif %}
     </div>
-
   </div>
 </header>
 
-<!-- ================= NAVBAR ================= -->
-<nav class="navbar">
-  <div class="wrap nav-inner">
-    <a href="{{ url_for('home') }}" class="nav-link">Home</a>
-    <a href="{{ url_for('category', slug='job') }}" class="nav-link">Jobs</a>
-    <a href="{{ url_for('category', slug='result') }}" class="nav-link">Results</a>
-    <a href="{{ url_for('category', slug='scheme') }}" class="nav-link">Schemes</a>
-    <a href="{{ url_for('category', slug='examcutoff') }}" class="nav-link">Exam Cutoffs</a>
-    <a href="{{ url_for('category', slug='currentaffairs') }}" class="nav-link">Current Affairs</a>
-    <a href="{{ url_for('contact') }}" class="nav-link">Contact Us</a>
+<!-- IMPORTANT: CSS मध्ये nav class आहे म्हणून इथे nav वापरला -->
+<nav class="nav">
+  <div class="wrap nav__inner">
+    <a href="{{ url_for('home') }}">Home</a>
+    <a href="{{ url_for('category', slug='job') }}">Jobs</a>
+    <a href="{{ url_for('category', slug='result') }}">Results</a>
+    <a href="{{ url_for('category', slug='scheme') }}">Schemes</a>
+    <a href="{{ url_for('category', slug='examcutoff') }}">Exam Cutoffs</a>
+    <a href="{{ url_for('category', slug='currentaffairs') }}">Current Affairs</a>
+    <a href="{{ url_for('contact') }}">Contact Us</a>
   </div>
 </nav>
 
-<!-- ================= TOP AD ================= -->
+{% if adsense_enabled and adsense_top_slot %}
 <div class="ad-banner">
   <ins class="adsbygoogle"
        style="display:block"
-       data-ad-client="ca-pub-XXXXXXXXXXXX"
-       data-ad-slot="1234567890"
+       data-ad-client="{{ adsense_client }}"
+       data-ad-slot="{{ adsense_top_slot }}"
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
-  <script>
-       (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
+{% endif %}
 
-<!-- ================= MAIN CONTENT ================= -->
 <main class="wrap main">
-
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
       <div class="flash">
@@ -97,26 +88,22 @@
   {% endwith %}
 
   {% block content %}{% endblock %}
-
 </main>
 
-<!-- ================= BOTTOM AD ================= -->
+{% if adsense_enabled and adsense_bottom_slot %}
 <div class="ad-banner">
   <ins class="adsbygoogle"
        style="display:block"
-       data-ad-client="ca-pub-XXXXXXXXXXXX"
-       data-ad-slot="9876543210"
+       data-ad-client="{{ adsense_client }}"
+       data-ad-slot="{{ adsense_bottom_slot }}"
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
-  <script>
-       (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
+  <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
 </div>
+{% endif %}
 
-<!-- ================= FOOTER ================= -->
 <footer class="footer">
   <div class="wrap footer__inner">
-
     <div>
       <div class="footer__title">{{ site_name }}</div>
       <div class="muted">© {{ year }} • All Rights Reserved</div>
@@ -132,12 +119,11 @@
     <div class="footer__social">
       <h4>Follow Us</h4>
       <div class="social-icons">
-        <a href="https://t.me/Mazha_Sarkari_Setu" target="_blank"><i class="fa-brands fa-telegram"></i></a>
-        <a href="https://instagram.com/mohannikam_001" target="_blank"><i class="fa-brands fa-instagram"></i></a>
-        <a href="https://youtube.com/@Mazha_Sarkari_Setu" target="_blank"><i class="fa-brands fa-youtube"></i></a>
+        <a href="https://t.me/Mazha_Sarkari_Setu" target="_blank" title="Telegram"><i class="fa-brands fa-telegram"></i></a>
+        <a href="https://instagram.com/mohannikam_001" target="_blank" title="Instagram"><i class="fa-brands fa-instagram"></i></a>
+        <a href="https://youtube.com/@Mazha_Sarkari_Setu" target="_blank" title="YouTube"><i class="fa-brands fa-youtube"></i></a>
       </div>
     </div>
-
   </div>
 </footer>
 

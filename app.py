@@ -2,6 +2,7 @@ import os
 import sqlite3
 from datetime import datetime
 from functools import wraps
+
 from flask import (
     Flask, render_template, request, redirect, url_for,
     flash, session, abort, Response
@@ -9,9 +10,15 @@ from flask import (
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
 
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+
+    # ===== AdSense config (optional) =====
+    ADSENSE_CLIENT = (os.environ.get("ADSENSE_CLIENT") or "").strip()  # e.g. ca-pub-xxxxxxxx
+    ADSENSE_TOP_SLOT = (os.environ.get("ADSENSE_TOP_SLOT") or "").strip()
+    ADSENSE_BOTTOM_SLOT = (os.environ.get("ADSENSE_BOTTOM_SLOT") or "").strip()
 
     def get_db():
         con = sqlite3.connect(DB_PATH)
@@ -77,7 +84,7 @@ def create_app() -> Flask:
         @wraps(fn)
         def wrapper(*args, **kwargs):
             if not session.get("admin"):
-                return redirect(url_for("admin_login"))
+                return redirect(url_for("admin_login", next=request.path))
             return fn(*args, **kwargs)
         return wrapper
 
@@ -86,12 +93,17 @@ def create_app() -> Flask:
         return {
             "site_name": "Majha Sarkari Setu",
             "year": datetime.now().year,
+            "adsense_enabled": bool(ADSENSE_CLIENT),
+            "adsense_client": ADSENSE_CLIENT,
+            "adsense_top_slot": ADSENSE_TOP_SLOT,
+            "adsense_bottom_slot": ADSENSE_BOTTOM_SLOT,
         }
 
     # ---------------- PUBLIC ----------------
     @app.get("/")
     def home():
         con = get_db()
+        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
 
         def latest_for(slug, limit=6):
             return con.execute(
@@ -116,6 +128,7 @@ def create_app() -> Flask:
 
         return render_template(
             "index.html",
+            cats=cats,
             jobs=jobs,
             results=results,
             schemes=schemes,
@@ -127,6 +140,7 @@ def create_app() -> Flask:
         con = get_db()
         cat = con.execute("SELECT name, slug FROM categories WHERE slug=?", (slug,)).fetchone()
         if not cat:
+            con.close()
             abort(404)
 
         posts = con.execute(
@@ -146,6 +160,7 @@ def create_app() -> Flask:
             "SELECT * FROM posts WHERE id=? AND is_published=1", (post_id,)
         ).fetchone()
         if not p:
+            con.close()
             abort(404)
 
         cat = con.execute(
@@ -179,9 +194,9 @@ def create_app() -> Flask:
 
     @app.post("/contact")
     def contact_post():
-        name = request.form.get("name","").strip()
-        email = request.form.get("email","").strip()
-        message = request.form.get("message","").strip()
+        name = (request.form.get("name") or "").strip()
+        email = (request.form.get("email") or "").strip()
+        message = (request.form.get("message") or "").strip()
 
         if not (name and email and message):
             flash("All fields required.", "danger")
@@ -201,40 +216,177 @@ def create_app() -> Flask:
     # ---------------- ADMIN ----------------
     @app.get("/admin/login")
     def admin_login():
-        return render_template("admin_login.html")
+        admin_password = os.environ.get("ADMIN_PASSWORD")
+        if not admin_password:
+            flash("ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.", "danger")
+        return render_template("admin_login.html", next=request.args.get("next", "/admin"))
 
     @app.post("/admin/login")
     def admin_login_post():
-        username = request.form.get("username")
-        password = request.form.get("password")
+        username = (request.form.get("username") or "").strip()
+        password = (request.form.get("password") or "").strip()
+        next_url = request.form.get("next") or "/admin"
 
-        if username == "admin" and password == "admin123":
+        admin_password = os.environ.get("ADMIN_PASSWORD")
+        if not admin_password:
+            flash("ADMIN_PASSWORD env var set केलेला नाही. सुरक्षा साठी admin login बंद आहे.", "danger")
+            return redirect(url_for("admin_login"))
+
+        if username == "admin" and password == admin_password:
             session["admin"] = True
             flash("Admin login successful ✅", "success")
-            return redirect(url_for("admin_dashboard"))
-        else:
-            flash("Wrong username or password ❌", "danger")
-            return redirect(url_for("admin_login"))
+            return redirect(next_url)
+
+        flash("Wrong username/password ❌", "danger")
+        return redirect(url_for("admin_login"))
 
     @app.get("/admin/logout")
     def admin_logout():
-        session.pop("admin", None)
-        flash("Logged out", "info")
+        session.clear()
+        flash("Logged out.", "info")
         return redirect(url_for("home"))
 
     @app.get("/admin")
     @admin_required
     def admin_dashboard():
-        return "Admin Dashboard Working ✅"
+        category_filter = (request.args.get("category") or "").strip()
+        status_filter = (request.args.get("status") or "").strip()
 
-    # ---------------- SITEMAP ----------------
+        con = get_db()
+        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
+
+        query = "SELECT id, title, category_slug, created_at, is_published FROM posts WHERE 1=1"
+        params = []
+
+        if category_filter:
+            query += " AND category_slug=?"
+            params.append(category_filter)
+
+        if status_filter == "published":
+            query += " AND is_published=1"
+        elif status_filter == "draft":
+            query += " AND is_published=0"
+
+        query += " ORDER BY id DESC LIMIT 100"
+        posts = con.execute(query, params).fetchall()
+        con.close()
+
+        return render_template("admin.html", cats=cats, posts=posts)
+
+    @app.get("/admin/messages")
+    @admin_required
+    def admin_messages():
+        con = get_db()
+        msgs = con.execute("SELECT * FROM contact_messages ORDER BY id DESC LIMIT 200").fetchall()
+        con.close()
+        return render_template("admin_messages.html", messages=msgs)
+
+    @app.post("/admin/category/add")
+    @admin_required
+    def admin_add_category():
+        name = (request.form.get("name") or "").strip()
+        slug = (request.form.get("slug") or "").strip().lower()
+
+        if not name or not slug:
+            flash("Category name + slug required.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        con = get_db()
+        try:
+            con.execute("INSERT INTO categories (name, slug) VALUES (?,?)", (name, slug))
+            con.commit()
+            flash("Category added ✅", "success")
+        except sqlite3.IntegrityError:
+            flash("हा slug/name आधीच आहे.", "danger")
+        finally:
+            con.close()
+        return redirect(url_for("admin_dashboard"))
+
+    @app.post("/admin/post/add")
+    @admin_required
+    def admin_add_post():
+        title = (request.form.get("title") or "").strip()
+        category_slug = (request.form.get("category_slug") or "").strip()
+        summary = (request.form.get("summary") or "").strip()
+        content = (request.form.get("content") or "").strip()
+        source_url = (request.form.get("source_url") or "").strip() or None
+
+        if not (title and category_slug and summary and content):
+            flash("Title, Category, Summary, Content required.", "danger")
+            return redirect(url_for("admin_dashboard"))
+
+        con = get_db()
+        con.execute(
+            """INSERT INTO posts
+               (title, category_slug, summary, content, source_url, created_at, is_published)
+               VALUES (?,?,?,?,?,?,1)""",
+            (title, category_slug, summary, content, source_url, datetime.now().strftime("%Y-%m-%d %H:%M")),
+        )
+        con.commit()
+        con.close()
+        flash("Post added ✅", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.get("/admin/post/<int:post_id>/edit")
+    @admin_required
+    def admin_edit_post(post_id: int):
+        con = get_db()
+        p = con.execute("SELECT * FROM posts WHERE id=?", (post_id,)).fetchone()
+        cats = con.execute("SELECT name, slug FROM categories ORDER BY id").fetchall()
+        con.close()
+        if not p:
+            abort(404)
+        return render_template("admin_edit.html", post=p, cats=cats)
+
+    @app.post("/admin/post/<int:post_id>/edit")
+    @admin_required
+    def admin_edit_post_post(post_id: int):
+        title = (request.form.get("title") or "").strip()
+        category_slug = (request.form.get("category_slug") or "").strip()
+        summary = (request.form.get("summary") or "").strip()
+        content = (request.form.get("content") or "").strip()
+        source_url = (request.form.get("source_url") or "").strip() or None
+        is_published = 1 if request.form.get("is_published") == "1" else 0
+
+        con = get_db()
+        con.execute(
+            """UPDATE posts
+               SET title=?, category_slug=?, summary=?, content=?, source_url=?, is_published=?
+               WHERE id=?""",
+            (title, category_slug, summary, content, source_url, is_published, post_id),
+        )
+        con.commit()
+        con.close()
+        flash("Post updated ✅", "success")
+        return redirect(url_for("admin_dashboard"))
+
+    @app.post("/admin/post/<int:post_id>/delete")
+    @admin_required
+    def admin_delete_post(post_id: int):
+        con = get_db()
+        con.execute("DELETE FROM posts WHERE id=?", (post_id,))
+        con.commit()
+        con.close()
+        flash("Post deleted 🗑️", "info")
+        return redirect(url_for("admin_dashboard"))
+
+    # ---------------- SEO: ROBOTS + SITEMAP ----------------
+    @app.get("/robots.txt")
+    def robots():
+        base = request.host_url.rstrip("/")
+        txt = f"""User-agent: *
+Allow: /
+
+Sitemap: {base}/sitemap.xml
+"""
+        return Response(txt, mimetype="text/plain")
+
     @app.get("/sitemap.xml")
     def sitemap():
         con = get_db()
-        urls = []
-        base_url = "https://majha-sarkari-setu.onrender.com"
+        base_url = request.host_url.rstrip("/")
 
-        urls.append(f"{base_url}/")
+        urls = [f"{base_url}/"]
 
         categories = con.execute("SELECT slug FROM categories").fetchall()
         for c in categories:
@@ -253,16 +405,7 @@ def create_app() -> Flask:
             xml.append(f"    <loc>{url}</loc>")
             xml.append("  </url>")
         xml.append("</urlset>")
-
         return Response("\n".join(xml), mimetype="application/xml")
-
-    # ---------------- ROBOTS ----------------
-    @app.get("/robots.txt")
-    def robots():
-        return Response(
-            "User-agent: *\nAllow: /\nSitemap: https://majha-sarkari-setu.onrender.com/sitemap.xml",
-            mimetype="text/plain"
-        )
 
     # ---------------- ERRORS ----------------
     @app.errorhandler(404)

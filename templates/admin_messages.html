@@ -4,15 +4,16 @@
 
 <div class="pagehead">
   <h1>Contact Messages</h1>
-  <p class="muted">Users ने Contact form मधून पाठवलेले messages.</p>
+  <p class="muted">Latest messages (newest first).</p>
 </div>
 
 <div class="card">
-  <div style="display:flex; gap:10px; justify-content:space-between; align-items:center;">
+  <div class="section__head">
+    <h2>Inbox</h2>
     <a class="btn btn--ghost" href="{{ url_for('admin_dashboard') }}">← Back to Admin</a>
   </div>
 
-  <div class="tablewrap" style="margin-top:12px;">
+  <div class="tablewrap">
     <table class="table">
       <thead>
         <tr>
@@ -25,15 +26,13 @@
       <tbody>
         {% for m in messages %}
         <tr>
-          <td>{{ m['name'] }}</td>
-          <td>{{ m['email'] }}</td>
-          <td style="max-width:520px; white-space:pre-wrap;">{{ m['message'] }}</td>
+          <td><b>{{ m['name'] }}</b></td>
+          <td class="muted">{{ m['email'] }}</td>
+          <td>{{ m['message'] }}</td>
           <td class="muted">{{ m['created_at'] }}</td>
         </tr>
         {% else %}
-        <tr>
-          <td colspan="4" class="muted">No messages yet.</td>
-        </tr>
+        <tr><td colspan="4" class="muted">No messages yet.</td></tr>
         {% endfor %}
       </tbody>
     </table>

@@ -2,17 +2,22 @@
 {% block title %} • Admin Login{% endblock %}
 {% block content %}
 
-<div class="card" style="max-width:400px;margin:auto;">
-  <h2>Admin Login</h2>
+<div class="pagehead">
+  <h1>Admin Login</h1>
+  <p class="muted">Username: <b>admin</b> • Password: Render env मध्ये <b>ADMIN_PASSWORD</b></p>
+</div>
 
-  <form method="post" action="{{ url_for('admin_login_post') }}">
+<div class="card" style="max-width:520px;">
+  <form method="post" action="{{ url_for('admin_login_post') }}" class="form">
+    <input type="hidden" name="next" value="{{ next }}">
+
     <label>Username</label>
-    <input type="text" name="username" required>
+    <input name="username" required placeholder="admin">
 
     <label>Password</label>
-    <input type="password" name="password" required>
+    <input name="password" type="password" required placeholder="********">
 
-    <button type="submit" class="btn">Login</button>
+    <button class="btn" type="submit">Login</button>
   </form>
 </div>
 

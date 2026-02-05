@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Admin & private pages block
+Disallow: /admin
+Disallow: /admin/
+Disallow: /login
+Disallow: /logout
+
+# Sitemap location
+Sitemap: https://majha-sarkari-setu.onrender.com/sitemap.xml
