@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <title>{{ site_name }}{% block title %}{% endblock %}</title>
-  <meta name="description" content="Majha Sarkari Setu – Latest Govt Jobs, Results, Schemes, Exam Cutoffs & Current Affairs" />
-  <meta name="keywords" content="government jobs, sarkari naukri, exam results, schemes, current affairs, exam cutoffs" />
+  <meta name="description" content="JobMitra – Latest Govt Jobs, Results, Schemes, Exam Cutoffs & Current Affairs" />
+  <meta name="keywords" content="government jobs, sarkari naukri, exam results, schemes, current affairs, exam cutoffs, jobmitra" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,15 +25,22 @@
 
 <header class="topbar">
   <div class="wrap topbar__inner">
+
+    <!-- ✅ Brand / Logo -->
     <div class="brand">
       <a class="brand__logo" href="{{ url_for('home') }}">
-        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="{{ site_name }} logo">
+        <img src="{{ url_for('static', filename='img/jobmitra-logo.png') }}" alt="JobMitra Logo">
       </a>
       <div class="brand__text">
         <a class="brand__name" href="{{ url_for('home') }}">{{ site_name }}</a>
-        <div class="brand__tag">Jobs • Results • Schemes • Updates (Marathi + English mix)</div>
+        <div class="brand__tag">{{ site_tagline }}</div>
       </div>
     </div>
+
+    <!-- ✅ Mobile Nav Toggle -->
+    <button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false">
+      <i class="fa-solid fa-bars"></i>
+    </button>
 
     <div class="topbar__actions">
       <form class="search" action="{{ url_for('search') }}" method="get">
@@ -51,16 +58,17 @@
   </div>
 </header>
 
-<!-- IMPORTANT: CSS मध्ये nav class आहे म्हणून इथे nav वापरला -->
-<nav class="nav">
+<nav class="nav" id="siteNav">
   <div class="wrap nav__inner">
-    <a href="{{ url_for('home') }}">Home</a>
-    <a href="{{ url_for('category', slug='job') }}">Jobs</a>
-    <a href="{{ url_for('category', slug='result') }}">Results</a>
-    <a href="{{ url_for('category', slug='scheme') }}">Schemes</a>
-    <a href="{{ url_for('category', slug='examcutoff') }}">Exam Cutoffs</a>
-    <a href="{{ url_for('category', slug='currentaffairs') }}">Current Affairs</a>
-    <a href="{{ url_for('contact') }}">Contact Us</a>
+    <div class="nav__links">
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('category', slug='job') }}">Jobs</a>
+      <a href="{{ url_for('category', slug='result') }}">Results</a>
+      <a href="{{ url_for('category', slug='scheme') }}">Schemes</a>
+      <a href="{{ url_for('category', slug='examcutoff') }}">Exam Cutoffs</a>
+      <a href="{{ url_for('category', slug='currentaffairs') }}">Current Affairs</a>
+      <a href="{{ url_for('contact') }}">Contact Us</a>
+    </div>
   </div>
 </nav>
 

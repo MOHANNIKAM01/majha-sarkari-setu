@@ -1,4 +1,4 @@
-/* Small UX improvements */
+/* Small UX improvements + Mobile Navbar Toggle */
 document.addEventListener("DOMContentLoaded", () => {
   // Smooth scroll for anchor links (if any)
   document.querySelectorAll('a[href^="#"]').forEach(a => {
@@ -11,4 +11,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   });
+
+  // ✅ Mobile navbar hamburger toggle
+  const btn = document.querySelector(".nav-toggle");
+  const nav = document.getElementById("siteNav");
+
+  if (btn && nav) {
+    btn.addEventListener("click", () => {
+      const opened = nav.classList.toggle("is-open");
+      btn.setAttribute("aria-expanded", opened ? "true" : "false");
+    });
+  }
 });

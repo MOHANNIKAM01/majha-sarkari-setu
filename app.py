@@ -8,7 +8,10 @@ from flask import (
     flash, session, abort, Response
 )
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
+# ✅ Render persistent disk support:
+# Render Dashboard मध्ये Disk mount: /var/data
+# Env var: DB_PATH=/var/data/database.db
+DB_PATH = os.environ.get("DB_PATH") or os.path.join(os.path.dirname(__file__), "database.db")
 
 
 def create_app() -> Flask:
@@ -26,6 +29,11 @@ def create_app() -> Flask:
         return con
 
     def init_db():
+        # ✅ Ensure folder exists if DB_PATH is like /var/data/database.db
+        db_dir = os.path.dirname(DB_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+
         con = get_db()
         cur = con.cursor()
 
@@ -90,8 +98,10 @@ def create_app() -> Flask:
 
     @app.context_processor
     def inject_globals():
+        # ✅ Branding here
         return {
-            "site_name": "Majha Sarkari Setu",
+            "site_name": "JobMitra",
+            "site_tagline": "तुमच्या प्रगतीचा सोबती",
             "year": datetime.now().year,
             "adsense_enabled": bool(ADSENSE_CLIENT),
             "adsense_client": ADSENSE_CLIENT,
@@ -118,6 +128,10 @@ def create_app() -> Flask:
         results = latest_for("result", 6)
         schemes = latest_for("scheme", 6)
 
+        # ✅ NEW: home page वर हे 2 categories पण दाखवण्यासाठी
+        examcutoffs = latest_for("examcutoff", 6)
+        current_affairs = latest_for("currentaffairs", 8)
+
         latest = con.execute(
             """SELECT id, title, category_slug, summary, created_at
                FROM posts
@@ -132,6 +146,8 @@ def create_app() -> Flask:
             jobs=jobs,
             results=results,
             schemes=schemes,
+            examcutoffs=examcutoffs,
+            current_affairs=current_affairs,
             latest=latest,
         )
 
@@ -418,4 +434,5 @@ Sitemap: {base}/sitemap.xml
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=True)
+    # Render वर debug=False ठेव
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)), debug=False)
